@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name = "pmap",
-    version = "0.0.4",
+    version = "0.0.5",
     author = "Francesco Bruschi",
     py_modules = ["pmap"],
     description = "a multithreaded map operator",
