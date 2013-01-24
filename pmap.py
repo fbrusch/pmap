@@ -1,8 +1,9 @@
-from threading import Thread, Event, activeCount
+from threading import Thread, Semaphore
 
-def mapper(f, arg, l, index, thread_terminated):
+def mapper(f, arg, l, index, pool_semaphore):
         l[index]= f(arg)
-        thread_terminated.set()
+        if pool_semaphore:
+            pool_semaphore.release()
 
 def pmap(f, l, limit = None):
     """A parallel version of map, that preserves ordering.
@@ -15,17 +16,19 @@ def pmap(f, l, limit = None):
     >>> time.clock() - t1 > 0.001
     True
     """
-    thread_terminated = Event()
+    if limit:
+        pool_semaphore = Semaphore(limit)
+    else:
+        pool_semaphore = None
+
     pool=[]
     res = range(len(l))
     for i in range(len(l)):
         t = Thread(target = mapper, args = (f, l[i], res, i,
-                                            thread_terminated))
+                                            pool_semaphore))
         pool.append(t)
-        if limit and activeCount() > limit:
-            thread_terminated.wait()
-            thread_terminated.clear()
-
+        if limit:
+            pool_semaphore.acquire()
         t.start()
     map (lambda x:x.join(), pool)
     return res
